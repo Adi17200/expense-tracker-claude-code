@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy — Spendly{% endblock %}
+
+{% block content %}
+<div class="content-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: var(--text-color);">
+    <h1 style="margin-bottom: 20px;">Privacy Policy</h1>
+    <p style="margin-bottom: 20px;">Last updated: October 21, 2026</p>
+
+    <section style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-color);">1. Data We Collect</h2>
+        <p>We collect information you provide directly to us when you create an account, such as your email address. We also collect the financial transactions you manually enter into the app, including amounts, categories, and dates.</p>
+    </section>
+
+    <section style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-color);">2. How We Use Your Data</h2>
+        <p>Your data is used exclusively to provide the expense tracking service. This includes generating your spending summaries, categorizing your expenses, and maintaining your user profile.</p>
+    </section>
+
+    <section style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-color);">3. Data Storage</h2>
+        <p>We employ industry-standard security measures to protect your data. Your information is stored securely on our servers and is only accessible to you through your authenticated account.</p>
+    </section>
+
+    <section style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-color);">4. Third Party Services</h2>
+        <p>Spendly does not sell, trade, or otherwise transfer your personal information to outside parties. We do not use third-party analytics or advertising trackers that compromise your privacy.</p>
+    </section>
+
+    <section style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-color);">5. Contact Us</h2>
+        <p>If you have any questions regarding this Privacy Policy or the handling of your data, please contact us at privacy@spendly.example.com.</p>
+    </section>
+
+    <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        <a href="{{ url_for('landing') }}" style="color: var(--primary-color); text-decoration: none;">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}
