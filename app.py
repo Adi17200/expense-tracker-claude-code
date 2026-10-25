@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import init_db, seed_db, get_db
+from database.queries import get_summary_stats, get_recent_transactions, get_category_breakdown, get_user_by_id
+
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret-key"
@@ -98,32 +100,16 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    # Hardcoded data for Step 4 UI validation
-    user = {
-        "name": "Adithya Kumar",
-        "email": "adithya@example.com",
-        "initials": "AK",
-        "member_since": "October 2024"
-    }
+    user_id = session["user_id"]
 
-    stats = {
-        "total_spent": "12,450",
-        "count": 24,
-        "top_category": "Food & Dining"
-    }
+    # Fetch real user data
+    user = get_user_by_id(user_id)
+    if not user:
+        return redirect(url_for("login"))
 
-    transactions = [
-        {"date": "2024-10-20", "description": "Starbucks Coffee", "category": "Food", "amount": "450"},
-        {"date": "2024-10-18", "description": "Uber Ride to Office", "category": "Transport", "amount": "320"},
-        {"date": "2024-10-15", "description": "Amazon - Mechanical Keyboard", "category": "Shopping", "amount": "4,500"},
-        {"date": "2024-10-12", "description": "Grocery Store", "category": "Food", "amount": "1,200"},
-    ]
-
-    categories = [
-        {"name": "Food", "amount": "5,600", "percent": 45},
-        {"name": "Transport", "amount": "3,200", "percent": 25},
-        {"name": "Shopping", "amount": "3,650", "percent": 30},
-    ]
+    stats = get_summary_stats(user_id)
+    transactions = get_recent_transactions(user_id)
+    categories = get_category_breakdown(user_id)
 
     return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
 
