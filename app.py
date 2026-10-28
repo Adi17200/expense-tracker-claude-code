@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import init_db, seed_db, get_db
 from database.queries import get_summary_stats, get_recent_transactions, get_category_breakdown, get_user_by_id
+from datetime import datetime, timedelta
 
 
 app = Flask(__name__)
@@ -102,16 +103,55 @@ def profile():
 
     user_id = session["user_id"]
 
+    # Date filter handling
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    if date_from and date_to:
+        try:
+            datetime.strptime(date_from, "%Y-%m-%d")
+            datetime.strptime(date_to, "%Y-%m-%d")
+            if date_from > date_to:
+                flash("Start date must be before end date.")
+                date_from, date_to = None, None
+        except ValueError:
+            date_from, date_to = None, None
+
     # Fetch real user data
     user = get_user_by_id(user_id)
     if not user:
         return redirect(url_for("login"))
 
-    stats = get_summary_stats(user_id)
-    transactions = get_recent_transactions(user_id)
-    categories = get_category_breakdown(user_id)
+    stats = get_summary_stats(user_id, date_from, date_to)
+    transactions = get_recent_transactions(user_id, date_from=date_from, date_to=date_to)
+    categories = get_category_breakdown(user_id, date_from, date_to)
 
-    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
+    # Compute preset dates for the template
+    today = datetime.now().date()
+    first_of_month = today.replace(day=1).strftime("%Y-%m-%d")
+    this_month_from = first_of_month
+    this_month_to = today.strftime("%Y-%m-%d")
+
+    last_3m_from = (today - timedelta(days=90)).strftime("%Y-%m-%d")
+    last_3m_to = today.strftime("%Y-%m-%d")
+
+    last_6m_from = (today - timedelta(days=180)).strftime("%Y-%m-%d")
+    last_6m_to = today.strftime("%Y-%m-%d")
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+        date_from=date_from,
+        date_to=date_to,
+        presets={
+            "this_month": (this_month_from, this_month_to),
+            "last_3m": (last_3m_from, last_3m_to),
+            "last_6m": (last_6m_from, last_6m_to),
+        }
+    )
 
 
 @app.route("/expenses/add")

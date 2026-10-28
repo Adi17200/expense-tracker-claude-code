@@ -28,41 +28,82 @@ def get_user_by_id(user_id):
     finally:
         conn.close()
 
-def get_recent_transactions(user_id, limit=10):
-
+def get_user_by_id(user_id):
     """
-    Fetches the most recent transactions for a given user.
+    Fetches a user's profile details by their ID.
     """
     conn = get_db()
     try:
-        cursor = conn.execute(
-            "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT ?",
-            (user_id, limit)
-        )
+        row = conn.execute(
+            "SELECT name, email, created_at FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+
+        if not row:
+            return None
+
+        # Format created_at (YYYY-MM-DD HH:MM:SS) to "Month YYYY"
+        created_date = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
+        member_since = created_date.strftime('%B %Y')
+
+        return {
+            "name": row['name'],
+            "email": row['email'],
+            "member_since": member_since,
+            "initials": "".join([n[0].upper() for n in row['name'].split()])
+        }
+    finally:
+        conn.close()
+
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
+
+    """
+    Fetches the most recent transactions for a given user, optionally filtered by date.
+    """
+    conn = get_db()
+    try:
+        query = "SELECT date, description, category, amount FROM expenses WHERE user_id = ?"
+        params = [user_id]
+
+        if date_from and date_to:
+            query += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
+        query += " ORDER BY date DESC LIMIT ?"
+        params.append(limit)
+
+        cursor = conn.execute(query, tuple(params))
         rows = cursor.fetchall()
         # Convert sqlite3.Row objects to dictionaries
         return [dict(row) for row in rows]
     finally:
         conn.close()
 
-def get_summary_stats(user_id):
+def get_summary_stats(user_id, date_from=None, date_to=None):
     """
-    Fetches total spent, transaction count, and the top spending category for a user.
+    Fetches total spent, transaction count, and the top spending category for a user, optionally filtered by date.
     """
     conn = get_db()
     try:
+        # Base where clause
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
         # Total Spent
-        res_total = conn.execute("SELECT SUM(amount) FROM expenses WHERE user_id = ?", (user_id,)).fetchone()
+        res_total = conn.execute(f"SELECT SUM(amount) FROM expenses {where_clause}", tuple(params)).fetchone()
         total_spent = res_total[0] if res_total[0] is not None else 0.0
 
         # Transaction Count
-        res_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user_id,)).fetchone()
+        res_count = conn.execute(f"SELECT COUNT(*) FROM expenses {where_clause}", tuple(params)).fetchone()
         count = res_count[0] if res_count[0] is not None else 0
 
         # Top Category
         res_cat = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,)
+            f"SELECT category FROM expenses {where_clause} GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            tuple(params)
         ).fetchone()
         top_category = res_cat[0] if res_cat and res_cat[0] else "—"
 
@@ -74,15 +115,21 @@ def get_summary_stats(user_id):
     finally:
         conn.close()
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """
-    Calculates the spending breakdown by category for a given user.
+    Calculates the spending breakdown by category for a given user, optionally filtered by date.
     """
     conn = get_db()
     try:
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
         cursor = conn.execute(
-            "SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,)
+            f"SELECT category, SUM(amount) as total FROM expenses {where_clause} GROUP BY category ORDER BY total DESC",
+            tuple(params)
         )
         rows = cursor.fetchall()
 
