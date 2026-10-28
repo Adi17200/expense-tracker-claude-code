@@ -9,6 +9,28 @@
         <p>Manage your spending and account details</p>
     </header>
 
+    <!-- Date Filter Bar -->
+    <div class="filter-bar">
+        <div class="preset-group">
+            <a href="{{ url_for('profile', date_from=presets.this_month[0], date_to=presets.this_month[1]) }}"
+               class="preset-btn {{ 'active' if date_from == presets.this_month[0] }}">This Month</a>
+            <a href="{{ url_for('profile', date_from=presets.last_3m[0], date_to=presets.last_3m[1]) }}"
+               class="preset-btn {{ 'active' if date_from == presets.last_3m[0] }}">Last 3 Months</a>
+            <a href="{{ url_for('profile', date_from=presets.last_6m[0], date_to=presets.last_6m[1]) }}"
+               class="preset-btn {{ 'active' if date_from == presets.last_6m[0] }}">Last 6 Months</a>
+            <a href="{{ url_for('profile') }}"
+               class="preset-btn {{ 'active' if not date_from }}">All Time</a>
+        </div>
+
+        <form class="custom-range-form" method="GET">
+            <input type="date" name="date_from" value="{{ date_from or '' }}" class="form-input-date">
+            <span class="range-sep">&rarr;</span>
+            <input type="date" name="date_to" value="{{ date_to or '' }}" class="form-input-date">
+            <button type="submit" class="btn-primary">Apply</button>
+            <a href="{{ url_for('profile') }}" class="btn-ghost">Clear</a>
+        </form>
+    </div>
+
     <div class="profile-grid">
         <!-- User Info Card -->
         <section class="profile-card user-card">
