@@ -28,41 +28,15 @@ def get_user_by_id(user_id):
     finally:
         conn.close()
 
-def get_user_by_id(user_id):
-    """
-    Fetches a user's profile details by their ID.
-    """
-    conn = get_db()
-    try:
-        row = conn.execute(
-            "SELECT name, email, created_at FROM users WHERE id = ?",
-            (user_id,)
-        ).fetchone()
-
-        if not row:
-            return None
-
-        # Format created_at (YYYY-MM-DD HH:MM:SS) to "Month YYYY"
-        created_date = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
-        member_since = created_date.strftime('%B %Y')
-
-        return {
-            "name": row['name'],
-            "email": row['email'],
-            "member_since": member_since,
-            "initials": "".join([n[0].upper() for n in row['name'].split()])
-        }
-    finally:
-        conn.close()
-
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
+
 
     """
     Fetches the most recent transactions for a given user, optionally filtered by date.
     """
     conn = get_db()
     try:
-        query = "SELECT date, description, category, amount FROM expenses WHERE user_id = ?"
+        query = "SELECT id, date, description, category, amount FROM expenses WHERE user_id = ?"
         params = [user_id]
 
         if date_from and date_to:
@@ -161,5 +135,61 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
             breakdown[0]["percent"] += diff
 
         return breakdown
+    finally:
+        conn.close()
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Inserts a new expense for a user.
+    """
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetches a single expense by ID, ensuring it belongs to the specified user.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Updates an existing expense, ensuring ownership.
+    """
+    conn = get_db()
+    try:
+        conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+def delete_expense(expense_id, user_id):
+    """
+    Deletes an expense, ensuring ownership.
+    """
+    conn = get_db()
+    try:
+        conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        )
+        conn.commit()
     finally:
         conn.close()
