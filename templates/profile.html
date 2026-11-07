@@ -82,7 +82,13 @@
                             <td class="font-medium">{{ tx.description }}</td>
                             <td><span class="category-badge badge-{{ tx.category|lower }}">{{ tx.category }}</span></td>
                             <td class="text-right font-medium">₹{{ tx.amount }}</td>
-                            <td class="text-center"><a href="/expenses/{{ tx.id }}/edit" class="btn-small">Edit</a></td>
+                            <td class="text-center">
+                                <a href="/expenses/{{ tx.id }}/edit" class="btn-small">Edit</a>
+                                <form method="POST" action="/expenses/{{ tx.id }}/delete" style="display:inline"
+                                      onsubmit="return confirm('Delete this expense?')">
+                                    <button type="submit" class="btn-delete">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
