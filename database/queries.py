@@ -28,33 +28,6 @@ def get_user_by_id(user_id):
     finally:
         conn.close()
 
-def get_user_by_id(user_id):
-    """
-    Fetches a user's profile details by their ID.
-    """
-    conn = get_db()
-    try:
-        row = conn.execute(
-            "SELECT name, email, created_at FROM users WHERE id = ?",
-            (user_id,)
-        ).fetchone()
-
-        if not row:
-            return None
-
-        # Format created_at (YYYY-MM-DD HH:MM:SS) to "Month YYYY"
-        created_date = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
-        member_since = created_date.strftime('%B %Y')
-
-        return {
-            "name": row['name'],
-            "email": row['email'],
-            "member_since": member_since,
-            "initials": "".join([n[0].upper() for n in row['name'].split()])
-        }
-    finally:
-        conn.close()
-
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
 
     """
@@ -62,7 +35,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
     conn = get_db()
     try:
-        query = "SELECT date, description, category, amount FROM expenses WHERE user_id = ?"
+        query = "SELECT id, date, description, category, amount FROM expenses WHERE user_id = ?"
         params = [user_id]
 
         if date_from and date_to:
@@ -115,9 +88,52 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
     finally:
         conn.close()
 
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetches a single expense row only if it belongs to the given user.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Updates an expense in place, scoped to both ID and user_id for ownership safety.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Inserts a new expense into the database.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
 def get_category_breakdown(user_id, date_from=None, date_to=None):
     """
-    Calculates the spending breakdown by category for a given user, optionally filtered by date.
+    Returns spending breakdown by category with percentages.
     """
     conn = get_db()
     try:

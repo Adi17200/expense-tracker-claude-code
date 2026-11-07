@@ -60,7 +60,10 @@
 
         <!-- Transaction History -->
         <section class="profile-card history-card">
-            <h3>Recent Transactions</h3>
+            <div class="history-header">
+                <h3>Recent Transactions</h3>
+                <a href="{{ url_for('add_expense') }}" class="btn-primary">Add Expense</a>
+            </div>
             <div class="table-container">
                 <table class="profile-table">
                     <thead>
@@ -69,6 +72,7 @@
                             <th>Description</th>
                             <th>Category</th>
                             <th class="text-right">Amount</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -78,6 +82,7 @@
                             <td class="font-medium">{{ tx.description }}</td>
                             <td><span class="category-badge badge-{{ tx.category|lower }}">{{ tx.category }}</span></td>
                             <td class="text-right font-medium">₹{{ tx.amount }}</td>
+                            <td class="text-center"><a href="/expenses/{{ tx.id }}/edit" class="btn-small">Edit</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
